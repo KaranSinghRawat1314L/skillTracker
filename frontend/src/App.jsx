@@ -6,7 +6,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SkillsAdd from "./pages/SkillsAdd";
-import AIQuizzes from "./pages/AIQuizzes";
+import AIQuizzes from "./pages/AiQuizzes";
 import SkillDetail from "./pages/SkillDetail"; // Optional if implemented
 import Performance from "./pages/Performance"; // Optional Performance analytics page
 
