@@ -1,0 +1,60 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Build output directories
+dist/
+dist-ssr/
+build/
+
+# Environment variable files (do NOT commit secrets)
+.env
+.env.*
+!.env.example
+
+# Local files
+*.local
+
+# Testing coverage reports
+coverage/
+
+# Editor and IDE files
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# macOS files
+.DS_Store
+
+# Misc files
+Thumbs.db
+ehthumbs.db
+
+# NPM package files
+*.tgz
+
+# Optional npm/yarn/pnpm files
+.npm/
+.pnp/
+.pnp.js
+
+# Temporary and cache files
+.tmp/
+.nyc_output/
+
+# Ignore dist folders in frontend and backend if different
+/frontend/dist/
+/backend/dist/
