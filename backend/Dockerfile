@@ -1,17 +1,14 @@
-# backend/Dockerfile
 FROM node:18-alpine
+
+ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Install app dependencies
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci --only=production
 
-# Copy backend source code
 COPY . .
 
-# Expose backend port (adjust if using another port)
 EXPOSE 5000
 
-# Start backend app
 CMD ["npm", "start"]

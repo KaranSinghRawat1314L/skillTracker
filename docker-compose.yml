@@ -1,17 +1,15 @@
-version: "3.8"
-
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"      # maps container port 5000 to host
+      - "5000:5000"
     environment:
       - NODE_ENV=production
-      # Add other env vars (e.g. DB connection, JWT_SECRET, etc) here or use .env file
-    volumes:
-      - ./backend:/app   # optional for live reload during development
+      # Add other ENV variables here, e.g.,
+      # - JWT_SECRET=your_jwt_secret
+      # - DATABASE_URL=your_database_url
     restart: always
 
   frontend:
@@ -19,11 +17,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:80"        # maps nginx port 80 to host 3000 (adjust as needed)
+      - "3000:80"
     depends_on:
       - backend
     environment:
       - NODE_ENV=production
-    volumes:
-      - ./frontend:/app  # optional for development
     restart: always

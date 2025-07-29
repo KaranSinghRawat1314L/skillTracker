@@ -8,10 +8,10 @@ const ProfileDropdown = ({ user, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(user.name || "");
+  const [timestamp, setTimestamp] = useState(Date.now()); // used to bust cache
   const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Adjust your backend base URL accordingly
   const backendBase = "http://localhost:5000";
 
   const getInitials = () => {
@@ -21,10 +21,11 @@ const ProfileDropdown = ({ user, onLogout }) => {
   };
 
   const profileImage = user?.profilePic?.startsWith("/")
-    ? `${backendBase}${user.profilePic}`
-    : user?.profilePic || null;
+    ? `${backendBase}${user.profilePic}?t=${timestamp}`
+    : user?.profilePic
+    ? `${user.profilePic}?t=${timestamp}`
+    : null;
 
-  // Handle profile picture upload
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -42,24 +43,21 @@ const ProfileDropdown = ({ user, onLogout }) => {
         },
       });
 
-      // Assuming backend returns updated user object
       const updatedUser = res.data;
       localStorage.setItem("user", JSON.stringify(updatedUser));
-      // Ideally update user state in parent instead of reload
-      window.location.reload();
+      setTimestamp(Date.now()); // 👈 update cache-buster to force reload
     } catch (err) {
       console.error("Image upload failed:", err.response?.data || err.message);
       alert("Failed to upload profile image");
     }
   };
 
-  // Handle name update request
   const handleNameUpdate = async () => {
     try {
       const token = localStorage.getItem("token");
 
       const res = await axios.put(
-        `${backendBase}/api/users`,  // Adjust this if your backend uses a different endpoint for user update
+        `${backendBase}/api/users`,
         { name: newName },
         {
           headers: {
@@ -72,14 +70,12 @@ const ProfileDropdown = ({ user, onLogout }) => {
       const updatedUser = res.data;
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setIsEditing(false);
-      window.location.reload();
     } catch (err) {
       console.error("Name update failed:", err.response?.data || err.message);
       alert("Failed to update name");
     }
   };
 
-  // Handle user account deletion
   const handleDeleteAccount = async () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete your account? This cannot be undone."
@@ -105,7 +101,6 @@ const ProfileDropdown = ({ user, onLogout }) => {
     }
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -118,7 +113,6 @@ const ProfileDropdown = ({ user, onLogout }) => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Avatar button */}
       <div
         onClick={() => setIsOpen(!isOpen)}
         className="cursor-pointer w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow m-auto"
@@ -132,10 +126,8 @@ const ProfileDropdown = ({ user, onLogout }) => {
         )}
       </div>
 
-      {/* Dropdown panel */}
       {isOpen && (
         <div className="absolute flex flex-col items-center right-0 mt-2 w-64 bg-gray-50 border border-gray-200 rounded-xl shadow-lg z-50 p-4">
-          {/* Profile image section */}
           <div className="relative w-20 h-20 mb-4 group">
             {profileImage ? (
               <img
@@ -148,7 +140,6 @@ const ProfileDropdown = ({ user, onLogout }) => {
                 {getInitials()}
               </div>
             )}
-            {/* Pencil icon for image upload */}
             <div
               className="absolute bottom-0 right-0 bg-white rounded-full p-1 border border-gray-300 shadow cursor-pointer hover:bg-gray-100 transition"
               onClick={(e) => {
@@ -167,7 +158,6 @@ const ProfileDropdown = ({ user, onLogout }) => {
             />
           </div>
 
-          {/* Name and Email with name editing */}
           <div className="mb-4 text-center w-full relative">
             {isEditing ? (
               <div className="flex flex-col items-center gap-2">
@@ -197,9 +187,6 @@ const ProfileDropdown = ({ user, onLogout }) => {
             <p className="text-sm text-gray-500 mt-1">{user.email}</p>
           </div>
 
-          
-
-          {/* Logout button */}
           <button
             onClick={onLogout}
             className="w-full flex items-center font-semibold justify-center bg-red-100 gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-200 rounded transition"

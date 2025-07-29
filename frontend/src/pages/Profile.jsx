@@ -17,6 +17,7 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
   const [previewPic, setPreviewPic] = useState(null);
+  const [picTimestamp, setPicTimestamp] = useState(Date.now()); // ⬅️ added
   const fileInputRef = useRef();
 
   const token = localStorage.getItem("token");
@@ -36,6 +37,7 @@ export default function Profile() {
         setUser(res.data);
         if (res.data.address) setAddress(res.data.address);
         if (res.data.mobile) setMobile(res.data.mobile);
+        setPicTimestamp(Date.now()); // refresh image timestamp on load
       } catch {
         setError("Failed to load user profile.");
       } finally {
@@ -71,6 +73,7 @@ export default function Profile() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data);
+      setPicTimestamp(Date.now()); // update image timestamp on save
     } catch {
       setError("Failed to save address or mobile number.");
     } finally {
@@ -104,6 +107,7 @@ export default function Profile() {
       });
       setUser(res.data);
       setPreviewPic(null);
+      setPicTimestamp(Date.now()); // update timestamp after upload
     } catch {
       setError("Failed to upload profile picture.");
     } finally {
@@ -121,14 +125,16 @@ export default function Profile() {
     ).toUpperCase();
   };
 
-  // Compute profile image URL with backend base if relative path
+  // Compute profile image URL with backend base if relative path, and force no-cache
   const profileImage = previewPic
     ? previewPic
     : user?.profilePic
     ? user.profilePic.startsWith("http")
-      ? user.profilePic
-      : backendBase + user.profilePic
+      ? `${user.profilePic}?t=${picTimestamp}`
+      : `${backendBase}${user.profilePic}?t=${picTimestamp}`
     : null;
+
+  console.log("Profile pic:", user?.profilePic); // Safe console log
 
   if (loading && !user) {
     return (
@@ -234,7 +240,7 @@ export default function Profile() {
               disabled={loading}
               required
               type="tel"
-              pattern="[\d\s()+-]{7,}" // simple pattern for phone numbers
+              pattern="[\d\s()+-]{7,}"
               title="Enter a valid phone number"
             />
             <input
