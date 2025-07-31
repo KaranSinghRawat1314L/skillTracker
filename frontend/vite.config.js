@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [tailwindcss(), react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:5000',
-      '/profile_pics': 'http://localhost:5000'
+      '/api': 'https://skilltracker-tij0.onrender.com',
+      '/profile_pics': 'https://skilltracker-tij0.onrender.com'
     }
   }
 })
