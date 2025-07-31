@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import ProfileDropdown from "./ProfileDropdown"; // 👈 Import it
+import ProfileDropdown from "./ProfileDropdown"; 
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -13,7 +13,6 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Fetch user profile from backend
   const fetchUser = () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -32,7 +31,6 @@ export default function Navbar() {
     fetchUser();
   }, []);
 
-  // Listen for login/logout SPA events
   useEffect(() => {
     const handleLogin = () => {
       setLoadingUser(true);
@@ -59,7 +57,6 @@ export default function Navbar() {
     };
   }, []);
 
-  // Hide/show Navbar on scroll
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY < 48) setVisible(true);
@@ -71,7 +68,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Mobile menu outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -87,7 +83,6 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // User initials for avatar fallback
   const initials = user?.name
     ? user.name
         .split(" ")
@@ -96,7 +91,6 @@ export default function Navbar() {
         .toUpperCase()
     : "U";
 
-  // Logout handler for dropdown
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -104,7 +98,6 @@ export default function Navbar() {
     navigate("/login");
   };
 
-  // NavLink styling
   const linkClassName = ({ isActive }) =>
     `px-3 py-2 rounded-md text-sm font-medium ${
       isActive
@@ -112,9 +105,8 @@ export default function Navbar() {
         : "text-gray-700 hover:text-blue-600"
     }`;
 
-  if (loadingUser) return null; // Wait for auth status
+  if (loadingUser) return null; 
 
-  // Auth links for the right side
   let authLinks = null;
   if (!user) {
     if (location.pathname === "/signup") {
@@ -170,7 +162,6 @@ export default function Navbar() {
           SkillTracker
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden md:flex space-x-4">
           <NavLink to="/dashboard" className={linkClassName}>
             Dashboard
@@ -186,7 +177,6 @@ export default function Navbar() {
           </NavLink>
         </div>
 
-        {/* Hamburger button for mobile */}
         <button
           id="hamburger-btn"
           className="md:hidden p-2 rounded-md text-blue-600 hover:bg-blue-100"
@@ -217,7 +207,6 @@ export default function Navbar() {
           </svg>
         </button>
 
-        {/* Right side: ProfileDropdown or Auth Links */}
         <div
           className={`ml-4 flex items-center min-w-[120px] justify-end`}
         >
@@ -229,7 +218,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {mobileMenuOpen && (
         <div
           ref={mobileMenuRef}
