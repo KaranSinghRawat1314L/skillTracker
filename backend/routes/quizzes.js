@@ -13,7 +13,6 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 router.use(authMiddleware);
 
-// POST /quiz/generate - Generate AI quiz for authenticated user
 router.post('/generate', async (req, res) => {
   const { skill, difficulty } = req.body;
   if (!skill || !difficulty) {
@@ -21,7 +20,6 @@ router.post('/generate', async (req, res) => {
   }
 
   try {
-    // Verify skill ownership
     const skills = await getSkillsByUser(req.user.userId);
     const skillDoc = skills.find((s) => s.name === skill);
     if (!skillDoc) {
@@ -32,7 +30,6 @@ router.post('/generate', async (req, res) => {
       ? skillDoc.subSkills.join(', ')
       : 'no specific subskills';
 
-    // Prompt for Gemini
     const promptText = `Generate 5 ${difficulty} level multiple choice questions on the topic: "${skill}". Include subskills: ${subSkills}. 
 Format the output strictly as a JSON array of objects with these fields: 
 - prompt: string 
@@ -52,13 +49,11 @@ Format the output strictly as a JSON array of objects with these fields:
 
     let rawText = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Clean markdown code block (remove ```json or ``` and closing ```)
     rawText = rawText
-      .replace(/^\s*```(?:json)?\s*/i, '')   // remove opening ```
-      .replace(/\s*```\s*$/i, '')            // remove closing ```
+      .replace(/^\s*```(?:json)?\s*/i, '') 
+      .replace(/\s*```\s*$/i, '')           
       .trim();
 
-    // Parse JSON
     let questions;
     try {
       questions = JSON.parse(rawText);
@@ -71,7 +66,6 @@ Format the output strictly as a JSON array of objects with these fields:
       return res.status(500).json({ message: 'AI response not in expected format. Try again later.' });
     }
 
-    // Save quiz to DB
     const quiz = await createQuiz({
       skillId: skillDoc.skillId,
       questions,
@@ -88,7 +82,6 @@ Format the output strictly as a JSON array of objects with these fields:
   }
 });
 
-// GET /quiz - Fetch all quizzes for logged-in user
 router.get('/', async (req, res) => {
   try {
     const quizzes = await getQuizzesByUser(req.user.userId);
