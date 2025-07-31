@@ -8,7 +8,6 @@ const { getUserByEmail, createUser, getUserById } = require('../services/userSer
 const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// -------- EMAIL SIGNUP --------
 router.post('/signup', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password)
@@ -39,7 +38,6 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-// -------- EMAIL LOGIN --------
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -61,7 +59,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// -------- GOOGLE LOGIN/SIGNUP --------
 router.post('/google', async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ message: 'Missing token' });
