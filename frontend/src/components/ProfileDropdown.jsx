@@ -1,4 +1,3 @@
-// src/components/ProfileDropdown.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { LogOut } from "react-feather";
 import { Pencil } from "lucide-react";
@@ -8,7 +7,7 @@ const ProfileDropdown = ({ user, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(user.name || "");
-  const [timestamp, setTimestamp] = useState(Date.now()); // used to bust cache
+  const [timestamp, setTimestamp] = useState(Date.now()); 
   const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -45,7 +44,7 @@ const ProfileDropdown = ({ user, onLogout }) => {
 
       const updatedUser = res.data;
       localStorage.setItem("user", JSON.stringify(updatedUser));
-      setTimestamp(Date.now()); // 👈 update cache-buster to force reload
+      setTimestamp(Date.now());
     } catch (err) {
       console.error("Image upload failed:", err.response?.data || err.message);
       alert("Failed to upload profile image");
