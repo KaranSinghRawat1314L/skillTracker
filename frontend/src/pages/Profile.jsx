@@ -59,22 +59,22 @@ export default function Profile() {
   }
 
   // FR-14: upload profile pic to GridFS via backend
-  async function handlePicUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    setError('');
-    const formData = new FormData();
-    formData.append('profilePic', file);
-    try {
-      await api.post('/users/profile-pic', formData);
-      await fetchUser();            // re-fetch so profilePicId is updated everywhere
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to upload photo.');
-    } finally {
-      setUploading(false);
-    }
-  }
+  async async function handlePicUpload(file) {
+  const formData = new FormData();
+  formData.append('profilePic', file); // key name MUST match multer's .single('profilePic')
+
+  const res = await fetch('/api/users/profile-pic', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    body: formData,
+    // Do NOT set Content-Type manually — the browser sets the correct
+    // multipart/form-data boundary automatically when using FormData
+  });
+
+  const data = await res.json();
+  console.log('New file id:', data.profilePicId);
+}
+
 
   const hasAddress = user.address?.line1 || user.address?.city;
 

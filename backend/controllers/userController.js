@@ -1,43 +1,12 @@
 const userService = require('../services/userService');
 
-async function getMe(req, res, next) {
-  try {
-    res.json(req.user);
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function updateName(req, res, next) {
-  try {
-    const { name } = req.body;
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'Name cannot be empty' });
-    }
-    const updated = await userService.updateUserName(req.user._id, name);
-    res.json(updated);
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function updateAddress(req, res, next) {
-  try {
-    const { postalCode, country } = req.body;
-    if (!postalCode || !country) {
-      return res.status(400).json({ message: 'Postal code and country are required' });
-    }
-    const updated = await userService.updateUserAddress(req.user._id, req.body);
-    res.json(updated);
-  } catch (err) {
-    next(err);
-  }
-}
-
 async function uploadProfilePic(req, res, next) {
   try {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
 
+    // req.file.buffer is available because multer is configured with memoryStorage()
     const fileId = await userService.uploadProfilePic(
       req.user._id,
       req.file.buffer,
@@ -59,13 +28,13 @@ async function getProfilePic(req, res, next) {
   }
 }
 
-async function deleteAccount(req, res, next) {
+async function deleteProfilePic(req, res, next) {
   try {
-    await userService.deleteUser(req.user._id);
-    res.json({ message: 'Account deleted successfully' });
+    await userService.deleteProfilePic(req.user._id);
+    res.json({ message: 'Profile picture removed' });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { getMe, updateName, updateAddress, uploadProfilePic, getProfilePic, deleteAccount };
+module.exports = { uploadProfilePic, getProfilePic, deleteProfilePic };
