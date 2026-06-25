@@ -76,6 +76,10 @@ export function DifficultyBadge({ level }) {
  * Avatar — if user has a profilePicId, fetch from /api/users/profile-pic/:id
  * Otherwise show initials.
  */
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+// strip any trailing slash so we don't accidentally produce "...api//users/..."
+const BASE = API_BASE.replace(/\/$/, '');
+
 export function Avatar({ name, profilePicId, size = 'md' }) {
   const sizes = {
     sm:  'w-8 h-8 text-xs',
@@ -87,7 +91,13 @@ export function Avatar({ name, profilePicId, size = 'md' }) {
     ? name.trim().split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '?';
 
-  const src = profilePicId ? `/api/users/profile-pic/${profilePicId}` : null;
+  // profilePicId can be an ObjectId, an object, or a string depending on what
+  // the backend sent — always coerce to string before using in a URL.
+  const picId = profilePicId
+    ? (typeof profilePicId === 'object' && profilePicId._id ? profilePicId._id : profilePicId)
+    : null;
+
+  const src = picId ? `${BASE}/users/profile-pic/${picId}` : null;
 
   if (src) {
     return (
@@ -95,6 +105,11 @@ export function Avatar({ name, profilePicId, size = 'md' }) {
         src={src}
         alt={name}
         className={`${sizes[size]} rounded-full object-cover border-2 border-white shadow-sm`}
+        onError={(e) => {
+          // Debug aid: if this fires, log the exact URL that failed so you can
+          // curl/open it directly and see what's actually being returned.
+          console.error('Avatar failed to load:', src);
+        }}
       />
     );
   }
