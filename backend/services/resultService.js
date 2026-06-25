@@ -2,9 +2,8 @@ const axios = require('axios');
 const Result = require('../models/Result');
 const Quiz = require('../models/Quiz');
 
-const GEMINI_EVAL_URL =
-  process.env.GEMINI_API_URL ||
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 async function evaluateQuiz({ quizId, userAnswers, timeTaken, userId }) {
   const quiz = await Quiz.findOne({ _id: quizId, createdBy: userId });
@@ -21,15 +20,15 @@ async function evaluateQuiz({ quizId, userAnswers, timeTaken, userId }) {
   );
   const percentage = Math.round((score / quiz.questions.length) * 100);
 
-  // Ask Gemini for personalised feedback (non-fatal if it fails)
+  // Ask Llama (via Groq) for personalised feedback — non-fatal if it fails
   let aiFeedback = '';
   try {
     const evalData = quiz.questions.map((q, i) => ({
-      question:      q.prompt,
+      question: q.prompt,
       correctAnswer: q.answer,
-      userAnswer:    userAnswers[i] || '(no answer)',
-      isCorrect:     userAnswers[i] === q.answer,
-      explanation:   q.explanation,
+      userAnswer: userAnswers[i] || '(no answer)',
+      isCorrect: userAnswers[i] === q.answer,
+      explanation: q.explanation,
     }));
 
     const prompt = `You are a helpful learning coach. A student just completed a quiz.
@@ -44,17 +43,27 @@ Provide brief, encouraging feedback (under 150 words):
 4. One concrete next step.`;
 
     const res = await axios.post(
-      `${GEMINI_EVAL_URL}?key=${process.env.GEMINI_API_KEY}`,
+      GROQ_URL,
       {
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 300 },
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: 'You are an encouraging, concise learning coach.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 300,
       },
-      { headers: { 'Content-Type': 'application/json' } }
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+      }
     );
 
-    aiFeedback = res?.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    aiFeedback = res?.data?.choices?.[0]?.message?.content || '';
   } catch (err) {
-    console.error('AI feedback failed (non-fatal):', err.message);
+    console.error('AI feedback failed (non-fatal):', err.response?.data || err.message);
   }
 
   const result = await Result.create({

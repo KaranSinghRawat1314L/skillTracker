@@ -2,9 +2,38 @@ const axios = require('axios');
 const Quiz = require('../models/Quiz');
 const Skill = require('../models/Skill');
 
-const GEMINI_URL =
-  process.env.GEMINI_API_URL ||
-  'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent';
+// ── Groq config ────────────────────────────────────────────────────────────
+// Groq serves Meta's Llama models with an OpenAI-compatible API.
+// Free tier: generous per-minute + per-day limits, no credit card needed.
+// Get your key at: https://console.groq.com/keys
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
+/**
+ * Calls Groq with automatic retry on 429 (rate limit) / 503 (overloaded).
+ * Exponential backoff: 1s, 2s, 4s.
+ */
+async function callGroqWithRetry(payload, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await axios.post(GROQ_URL, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+      });
+    } catch (err) {
+      const status = err.response?.status;
+      const isRetryable = status === 429 || status === 503;
+
+      if (!isRetryable || attempt === maxRetries) throw err;
+
+      const waitMs = 1000 * Math.pow(2, attempt);
+      console.warn(`Groq returned ${status}. Retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})...`);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+  }
+}
 
 async function generateQuiz({ skillId, difficulty, userId }) {
   const skill = await Skill.findOne({ _id: skillId, createdBy: userId });
@@ -29,29 +58,42 @@ Each element must have exactly these fields:
   "explanation": "Brief reason why this is correct."
 }`;
 
-  const response = await axios.post(
-    GEMINI_URL,
-    {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 1500 },
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY,
+  // Groq uses the OpenAI-compatible chat completions format
+  const payload = {
+    model: GROQ_MODEL,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a quiz generator. Always respond with valid JSON only, no markdown formatting.',
       },
-    }
-  );
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.7,
+    max_tokens: 1500,
+  };
 
-  let raw = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  // Strip markdown code fences if Gemini wraps output in them
+  let response;
+  try {
+    response = await callGroqWithRetry(payload);
+  } catch (err) {
+    console.error('Groq API error:', err.response?.data || err.message);
+    const e = new Error('AI quiz generation failed. Please try again later.');
+    e.statusCode = 503;
+    throw e;
+  }
+
+  let raw = response?.data?.choices?.[0]?.message?.content || '';
+  // Strip markdown code fences if the model wraps output in them
   raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
+  // Some models wrap the array in an object like { "questions": [...] }
   let questions;
   try {
-    questions = JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    questions = Array.isArray(parsed) ? parsed : parsed.questions || parsed.data;
     if (!Array.isArray(questions) || questions.length === 0) throw new Error('Not an array');
   } catch {
+    console.error('Groq parse error. Raw output:', raw);
     const err = new Error('AI returned an unexpected format. Please try again.');
     err.statusCode = 502;
     throw err;
