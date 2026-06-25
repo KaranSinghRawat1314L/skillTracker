@@ -76,21 +76,33 @@ export function DifficultyBadge({ level }) {
  * Avatar — if user has a profilePicId, fetch from /api/users/profile-pic/:id
  * Otherwise show initials.
  */
-export function Avatar({ name, profilePicId }) {
-  // If user has uploaded a pic, point straight at the backend stream route.
-  // The browser sends a normal GET request, the server streams bytes back —
-  // exactly like any other image URL.
+export function Avatar({ name, profilePicId, size = 'md' }) {
+  const sizes = {
+    sm:  'w-8 h-8 text-xs',
+    md:  'w-10 h-10 text-sm',
+    lg:  'w-16 h-16 text-xl',
+    xl:  'w-24 h-24 text-3xl',
+  };
+  const initials = name
+    ? name.trim().split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
   const src = profilePicId ? `/api/users/profile-pic/${profilePicId}` : null;
 
   if (src) {
-    return <img src={src} alt={name} className="w-10 h-10 rounded-full object-cover" />;
+    return (
+      <img
+        src={src}
+        alt={name}
+        className={`${sizes[size]} rounded-full object-cover border-2 border-white shadow-sm`}
+      />
+    );
   }
-
-  // Fallback: show initials if no picture uploaded yet
-  const initials = name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   return (
-    <div className="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center">
-      {initials || '?'}
+    <div className={`${sizes[size]} rounded-full bg-gradient-to-br from-brand-400 to-accent-500
+                     flex items-center justify-center text-white font-semibold
+                     border-2 border-white shadow-sm shrink-0`}>
+      {initials}
     </div>
   );
 }

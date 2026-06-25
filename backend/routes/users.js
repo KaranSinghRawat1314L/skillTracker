@@ -2,18 +2,20 @@ const express = require('express');
 const multer = require('multer');
 const { authMiddleware } = require('../middleware/auth');
 const {
+  getMe,
+  updateName,
+  updateAddress,
   uploadProfilePic,
   getProfilePic,
-  deleteProfilePic,
+  deleteAccount,
 } = require('../controllers/userController');
 
 const router = express.Router();
 
-// IMPORTANT: memoryStorage (NOT diskStorage) — we need req.file.buffer
-// to stream directly into GridFS. Nothing gets written to local disk.
+// In-memory storage: the buffer is passed to GridFS in the service layer
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB max
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
   fileFilter: (_req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowed.includes(file.mimetype)) cb(null, true);
@@ -21,14 +23,15 @@ const upload = multer({
   },
 });
 
-// Public route — no auth needed to VIEW an avatar (so <img src="..."> works
-// directly in the browser without sending an Authorization header)
+// Profile pic served from GridFS — public (no auth needed to display an avatar in a page)
 router.get('/profile-pic/:fileId', getProfilePic);
 
 router.use(authMiddleware);
 
-// Authenticated routes — only the logged-in user can upload/delete their own pic
+router.get('/me',          getMe);
+router.put('/me',          updateName);      // update display name
+router.put('/address',     updateAddress);   // update address + mobile
 router.post('/profile-pic', upload.single('profilePic'), uploadProfilePic);
-router.delete('/profile-pic', deleteProfilePic);
+router.delete('/me',       deleteAccount);
 
 module.exports = router;
